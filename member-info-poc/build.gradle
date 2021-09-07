@@ -55,7 +55,14 @@ dependencies {
     implementation 'org.jetbrains.kotlin:kotlin-stdlib'
     implementation 'org.apache.avro:avro:1.10.1'
     implementation 'org.apache.avro:avro-tools:1.10.1'
-    implementation 'net.corda:avro-schema:5.0.0.6-SNAPSHOT'
+
+    // This module is ready to be a standalone project
+    // As it is now the module is inside corda-api project:
+    implementation project(':data:avro-schema')
+    // However in case of a running as a complete standalone project comment out the line above
+    // and publish corda-api with Avro schemas to a local Maven (./gradlew publishToMavenLocal).
+    // Then use s jar from your local repo:
+    //implementation 'net.corda:avro-schema:5.0.0.6-SNAPSHOT'
 
     // API e.g. MemberInfo
     implementation 'net.corda:corda-application:5.0.0-DevPreview--alpha-5d9c95d'
