@@ -1,0 +1,66 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm'
+}
+
+group 'com.r3.demo'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+
+    def cordaUseCache = System.getenv("CORDA_USE_CACHE")
+    if (cordaUseCache != null) {
+        maven {
+            url = "$artifactoryContextUrl/$cordaUseCache"
+            name = "R3 Maven remote repositories"
+            authentication {
+                basic(BasicAuthentication)
+            }
+            credentials {
+                username = System.getenv('CORDA_ARTIFACTORY_USERNAME') ?: cordaArtifactoryUsername
+                password = System.getenv('CORDA_ARTIFACTORY_PASSWORD') ?: cordaArtifactoryPassword
+            }
+        }
+    } else {
+        maven {
+            url = "$artifactoryContextUrl/corda-os-maven-unstable-local"
+            authentication {
+                basic(BasicAuthentication)
+            }
+            credentials {
+                username = System.getenv('CORDA_ARTIFACTORY_USERNAME') ?: cordaArtifactoryUsername
+                password = System.getenv('CORDA_ARTIFACTORY_PASSWORD') ?: cordaArtifactoryPassword
+            }
+        }
+        maven {
+            url = "$artifactoryContextUrl/corda-dependencies-dev"
+        }
+        maven {
+            url = "$artifactoryContextUrl/corda-releases"
+        }
+        maven {
+            url = "$artifactoryContextUrl/corda-dependencies"
+        }
+        maven {
+            url = "$artifactoryContextUrl/corda-dev"
+        }
+        maven {
+            url = "https://repo.gradle.org/gradle/libs-releases-local/"
+        }
+    }
+}
+
+dependencies {
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib'
+    implementation 'org.apache.avro:avro:1.10.1'
+    implementation 'org.apache.avro:avro-tools:1.10.1'
+    implementation 'net.corda:avro-schema:5.0.0.6-SNAPSHOT'
+
+    // API e.g. MemberInfo
+    implementation 'net.corda:corda-application:5.0.0-DevPreview--alpha-5d9c95d'
+
+    //Implementation e.g. MemberInfoImpl
+    implementation 'net.corda:corda-base:5.0.0-DevPreview--alpha-5d9c95d'
+    implementation 'net.corda:corda-application-internal:5.0.0-DevPreview--alpha-5d9c95d'
+}

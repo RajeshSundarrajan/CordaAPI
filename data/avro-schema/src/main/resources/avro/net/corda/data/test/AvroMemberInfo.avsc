@@ -1,69 +1,38 @@
 [
-  {
-    "type": "record",
+  { "type": "record",
     "name": "AvroEndpointInfo",
     "namespace": "net.corda.data.test",
     "fields": [
-      {
-        "name": "url",
-        "type": "string"
-      },
-      {
-        "name": "protocolVersion",
-        "type": "int"
-      }
+      { "name": "url", "type": "string"},
+      { "name": "protocolVersion", "type": "int" }
     ]
   },
-  {
-    "type": "record",
+  { "type": "record",
     "name": "AvroEndpoints",
     "namespace": "net.corda.data.test",
     "fields": [
-      {
-        "name": "url",
-        "type": {
-          "type": "array",
-          "items": "net.corda.data.test.AvroEndpointInfo"
-        }
-      }
+      { "name": "url",  "type": { "type": "array", "items": "net.corda.data.test.AvroEndpointInfo" } }
     ]
   },
-  {
-    "type": "record",
+  { "type": "record",
     "name": "AvroPublicKeys",
     "namespace": "net.corda.data.test",
     "fields": [
-      {
-        "name": "key",
-        "type": {
-          "type": "array",
-          "items": "string"
-        }
-      }
+      { "name": "key", "type": { "type": "array", "items": "string" } }
     ]
   },
-  {
-    "type": "record",
+  { "type": "record",
     "name": "AvroParty",
     "namespace": "net.corda.data.test",
-    "fields": [
-      {
-        "name": "name",
-        "type": "string"
-      },
-      {
-        "name": "key",
-        "type": "string"
-      }
+    "fields": [ { "name": "name", "type": "string" },
+      { "name": "key", "type": "string" }
     ]
   },
-  {
-    "type": "record",
+  { "type": "record",
     "name": "AvroMemberContextEntry",
     "namespace": "net.corda.data.test",
     "fields": [
-      {
-        "name": "value",
+      { "name": "value",
         "type": [
           "boolean",
           "int",
@@ -81,20 +50,8 @@
     "name": "AvroMemberInfo",
     "namespace": "net.corda.data.test",
     "fields": [
-      {
-        "name": "memberProvidedContext",
-        "type": {
-          "type": "map",
-          "values": "net.corda.data.test.AvroMemberContextEntry"
-        }
-      },
-      {
-        "name": "mgmProvidedContext",
-        "type": {
-          "type": "map",
-          "values": "net.corda.data.test.AvroMemberContextEntry"
-        }
-      }
+      { "name": "memberProvidedContext", "type": { "type": "map", "values": "net.corda.data.test.AvroMemberContextEntry" } },
+      { "name": "mgmProvidedContext", "type": { "type": "map", "values": "net.corda.data.test.AvroMemberContextEntry" } }
     ]
   }
 ]

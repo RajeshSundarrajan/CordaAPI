@@ -1,0 +1,22 @@
+[
+  {
+    "type": "record",
+    "name": "AvroKeyValuePair",
+    "namespace": "net.corda.data.test",
+    "fields": [
+      {"name": "key", "type": "string"},
+      {"name": "value", "type": "string"}
+    ]
+  },
+  {
+    "type": "record",
+    "name": "AvroFlatMap",
+    "namespace": "net.corda.data.test",
+    "fields": [
+      {
+        "name": "entries",
+        "type": { "type": "array", "items": "net.corda.data.test.AvroKeyValuePair" }
+      }
+    ]
+  }
+]
