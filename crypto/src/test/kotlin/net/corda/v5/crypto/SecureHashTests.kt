@@ -11,7 +11,7 @@ import kotlin.test.assertNotEquals
 
 class SecureHashTests {
     @Test
-    @Timeout(5)
+    @Timeout(300)
     fun `toHexString Should HEX representation of digest`() {
         val data = "abc".toByteArray()
         val algorithm = DigestAlgorithmName.SHA2_384.name
@@ -24,7 +24,7 @@ class SecureHashTests {
     }
 
     @Test
-    @Timeout(5)
+    @Timeout(300)
     fun `toString Should output string with algorithm name, delimiter and HEX representation of digest`() {
         val data = "Hello World!".toByteArray()
         val algorithm = DigestAlgorithmName.SHA2_384.name
@@ -40,7 +40,7 @@ class SecureHashTests {
     }
 
     @Test
-    @Timeout(5)
+    @Timeout(300)
     fun `prefixChars should output request first N characters of HEX representation of digest`() {
         val data = "def".toByteArray()
         val algorithm = DigestAlgorithmName.SHA2_384.name
@@ -53,7 +53,7 @@ class SecureHashTests {
     }
 
     @Test
-    @Timeout(5)
+    @Timeout(300)
     fun `Should create instance out of proper formatted string with algorithm, delimiter and HEX representation of digest`() {
         val str = "SHA-384:BFD76C0EBBD006FEE583410547C1887B0292BE76D582D96C242D2A792723E3FD6FD061F9D5CFD13B8F961358E6ADBA4A"
         val expectedBytes = byteArrayOf(

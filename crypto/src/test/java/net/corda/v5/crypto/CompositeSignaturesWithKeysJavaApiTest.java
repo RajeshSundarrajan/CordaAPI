@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CompositeSignaturesWithKeysJavaApiTest {
     @Test
-    @Timeout(5)
+    @Timeout(300)
     public void emptyConstantTest() {
         assertTrue(CompositeSignaturesWithKeys.EMPTY.getSigs().isEmpty());
         var sig = new DigitalSignature.WithKey(

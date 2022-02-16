@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class CordaOIDJavaApiTest {
     @Test
-    @Timeout(5)
+    @Timeout(300)
     public void constantTests() {
         assertNotNull(CordaOID.OID_R3_ROOT);
         assertNotNull(CordaOID.OID_CORDA_PLATFORM);

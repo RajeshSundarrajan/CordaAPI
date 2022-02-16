@@ -19,7 +19,7 @@ public class DigestServiceUtilsJavaApiTest {
     }
 
     @Test
-    @Timeout(5)
+    @Timeout(300)
     public void shouldCreateInstance() {
         var str = "SHA-384:BFD76C0EBBD006FEE583410547C1887B0292BE76D582D96C242D2A792723E3FD6FD061F9D5CFD13B8F961358E6ADBA4A";
         var expectedBytes = new byte[]{
@@ -32,7 +32,7 @@ public class DigestServiceUtilsJavaApiTest {
     }
 
     @Test
-    @Timeout(5)
+    @Timeout(300)
     public void ShouldReturnExpectedZeroHash() {
         var hash = DigestServiceUtils.getZeroHash(digestService, new DigestAlgorithmName("SHA-512"));
         assertEquals("SHA-512", hash.getAlgorithm());

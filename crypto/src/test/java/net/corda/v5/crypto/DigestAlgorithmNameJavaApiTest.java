@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class DigestAlgorithmNameJavaApiTest {
     @Test
-    @Timeout(5)
+    @Timeout(300)
     public void constantsTests() {
         assertEquals(8, DigestAlgorithmName.NONCE_SIZE);
         assertEquals("SHA-256", DigestAlgorithmName.SHA2_256.getName());

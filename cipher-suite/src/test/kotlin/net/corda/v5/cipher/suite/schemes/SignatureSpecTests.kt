@@ -25,7 +25,7 @@ class SignatureSpecTests {
     }
 
     @Test
-    @Timeout(5)
+    @Timeout(300)
     fun `Should throw IllegalArgumentException when initializing with blank signature name`() {
         assertThrows<IllegalArgumentException> {
             SignatureSpec(
@@ -35,7 +35,7 @@ class SignatureSpecTests {
     }
 
     @Test
-    @Timeout(5)
+    @Timeout(300)
     fun `getSigningData should returned passed byte array for standard digest calculation`() {
         val spec = ECDSA_SECP256K1_SHA256_TEMPLATE.signatureSpec
         val data = UUID.randomUUID().toString().toByteArray()
@@ -44,7 +44,7 @@ class SignatureSpecTests {
     }
 
     @Test
-    @Timeout(5)
+    @Timeout(300)
     fun `getSigningData should returned digest byte array for precalculated digest`() {
         val spec = SignatureSpec(
             signatureName = "NONEwithECDSA",

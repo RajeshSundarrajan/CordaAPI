@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class CompositeKeyJavaApiTest {
     @Test
-    @Timeout(5)
+    @Timeout(300)
     public void keyAlgorithmConstantTest() {
         assertEquals("COMPOSITE", CompositeKey.KEY_ALGORITHM);
     }

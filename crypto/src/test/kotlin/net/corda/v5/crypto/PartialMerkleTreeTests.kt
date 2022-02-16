@@ -31,7 +31,7 @@ class PartialMerkleTreeTests {
     }
 
     @Test
-    @Timeout(5)
+    @Timeout(300)
     fun `check full tree`() {
         val h = digestService.hash(UUID.randomUUID().toString().toByteArray(), DigestAlgorithmName.SHA2_256)
         val left = MerkleTree.Node(
@@ -46,7 +46,7 @@ class PartialMerkleTreeTests {
     }
 
     @Test
-    @Timeout(5)
+    @Timeout(300)
     fun `Find leaf index`() {
         // A Merkle tree with 20 leaves.
         val sampleLeaves = IntStream.rangeClosed(0, 19).toList().map {
@@ -134,7 +134,7 @@ class PartialMerkleTreeTests {
     }
 
     @Test
-    @Timeout(5)
+    @Timeout(300)
     fun `build Partial Merkle Tree, only left nodes branch`() {
         val inclHashes = listOf(leaves[3], leaves[5])
         val pmt = PartialMerkleTree.build(merkleTree, inclHashes)
@@ -142,28 +142,28 @@ class PartialMerkleTreeTests {
     }
 
     @Test
-    @Timeout(5)
+    @Timeout(300)
     fun `build Partial Merkle Tree, include zero leaves`() {
         val pmt = PartialMerkleTree.build(merkleTree, emptyList())
         assertTrue(pmt.verify(merkleTree.hash, emptyList(), digestService))
     }
 
     @Test
-    @Timeout(5)
+    @Timeout(300)
     fun `build Partial Merkle Tree, include all leaves`() {
         val pmt = PartialMerkleTree.build(merkleTree, leaves)
         assertTrue(pmt.verify(merkleTree.hash, leaves, digestService))
     }
 
     @Test
-    @Timeout(5)
+    @Timeout(300)
     fun `build Partial Merkle Tree - duplicate leaves failure`() {
         val inclHashes = arrayListOf(leaves[3], leaves[5], leaves[3], leaves[5])
         assertFailsWith<MerkleTreeException> { PartialMerkleTree.build(merkleTree, inclHashes) }
     }
 
     @Test
-    @Timeout(5)
+    @Timeout(300)
     fun `build Partial Merkle Tree - only duplicate leaves, less included failure`() {
         val leaves = "aaa"
         val hashes = leaves.map {
@@ -174,7 +174,7 @@ class PartialMerkleTreeTests {
     }
 
     @Test
-    @Timeout(5)
+    @Timeout(300)
     fun `verify Partial Merkle Tree - too many leaves failure`() {
         val inclHashes = arrayListOf(leaves[3], leaves[5])
         val pmt = PartialMerkleTree.build(merkleTree, inclHashes)
@@ -183,7 +183,7 @@ class PartialMerkleTreeTests {
     }
 
     @Test
-    @Timeout(5)
+    @Timeout(300)
     fun `verify Partial Merkle Tree - too little leaves failure`() {
         val inclHashes = arrayListOf(leaves[3], leaves[5], leaves[0])
         val pmt = PartialMerkleTree.build(merkleTree, inclHashes)
@@ -192,7 +192,7 @@ class PartialMerkleTreeTests {
     }
 
     @Test
-    @Timeout(5)
+    @Timeout(300)
     fun `verify Partial Merkle Tree - duplicate leaves failure`() {
         val mt = MerkleTree.getMerkleTree(
             leaves.subList(0, 5),
@@ -206,7 +206,7 @@ class PartialMerkleTreeTests {
     }
 
     @Test
-    @Timeout(5)
+    @Timeout(300)
     fun `verify Partial Merkle Tree - different leaves failure`() {
         val inclHashes = arrayListOf(leaves[3], leaves[5])
         val pmt = PartialMerkleTree.build(merkleTree, inclHashes)
@@ -214,7 +214,7 @@ class PartialMerkleTreeTests {
     }
 
     @Test
-    @Timeout(5)
+    @Timeout(300)
     fun `verify Partial Merkle Tree - wrong root`() {
         val inclHashes = listOf(leaves[3], leaves[5])
         val pmt = PartialMerkleTree.build(merkleTree, inclHashes)

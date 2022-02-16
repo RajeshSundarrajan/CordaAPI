@@ -9,7 +9,7 @@ import org.junit.jupiter.api.assertThrows
 
 class SignatureSchemeTemplateTests {
     @Test
-    @Timeout(5)
+    @Timeout(300)
     fun `Should throw IllegalArgumentException when initializing with blank code name`() {
         assertThrows<IllegalArgumentException> {
             SignatureSchemeTemplate(
@@ -24,7 +24,7 @@ class SignatureSchemeTemplateTests {
     }
 
     @Test
-    @Timeout(5)
+    @Timeout(300)
     fun `Should throw IllegalArgumentException when initializing with empty algorithmOIDs`() {
         assertThrows<IllegalArgumentException> {
             SignatureSchemeTemplate(
@@ -39,7 +39,7 @@ class SignatureSchemeTemplateTests {
     }
 
     @Test
-    @Timeout(5)
+    @Timeout(300)
     fun `Should throw IllegalArgumentException when initializing with blank algorithm name`() {
         assertThrows<IllegalArgumentException> {
             SignatureSchemeTemplate(

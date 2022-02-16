@@ -30,7 +30,7 @@ public class MerkleTreeJavaApiTest {
     }
 
     @Test
-    @Timeout(5)
+    @Timeout(300)
     public void shouldCreateMerkleTree() {
         var merkle = MerkleTree.getMerkleTree(oneLeaf(DigestAlgorithmName.SHA2_256), DigestAlgorithmName.SHA2_256, digestService);
         assertTrue(merkle instanceof MerkleTree.Node);

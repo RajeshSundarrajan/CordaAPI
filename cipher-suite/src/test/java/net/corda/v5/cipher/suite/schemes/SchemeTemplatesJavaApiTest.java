@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class SchemeTemplatesJavaApiTest {
     @Test
-    @Timeout(5)
+    @Timeout(300)
     public void constantsTests() {
         assertNotNull(SchemeTemplates.RSA_CODE_NAME);
         assertNotNull(SchemeTemplates.ECDSA_SECP256K1_CODE_NAME);

@@ -18,7 +18,7 @@ public class PartialMerkleTreeJavaApiTest {
     }
 
     @Test
-    @Timeout(5)
+    @Timeout(300)
     public void buildsPartialMerkleTree() {
         var l3 = digestService.hash("d".getBytes(), DigestAlgorithmName.SHA2_256);
         var l5 = digestService.hash("f".getBytes(), DigestAlgorithmName.SHA2_256);
