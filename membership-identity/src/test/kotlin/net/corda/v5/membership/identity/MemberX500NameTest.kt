@@ -189,17 +189,6 @@ class MemberX500NameTest {
         assertEquals(country, member.country)
     }
 
-    @Test
-    fun `create MemberX500Name without commonName, organisationUnit and state`() {
-        val member = MemberX500Name(organisation, locality, country)
-        assertNull(member.commonName)
-        assertNull(member.organisationUnit)
-        assertEquals(organisation, member.organisation)
-        assertEquals(locality, member.locality)
-        assertNull(member.state)
-        assertEquals(country, member.country)
-    }
-
     private fun checkLocalityAndOrganisationalUnitAndCommonNameReject(invalid: String) {
         assertFailsWith(IllegalArgumentException::class) {
             MemberX500Name.parse("O=VALID, L=${invalid}, C=DE, OU=VALID, CN=VALID")

@@ -2,11 +2,7 @@ package net.corda.v5.membership.identity
 
 import net.corda.v5.base.annotations.CordaSerializable
 import net.corda.v5.membership.identity.internal.LegalNameValidator
-import org.bouncycastle.asn1.ASN1ObjectIdentifier
-import org.bouncycastle.asn1.x500.AttributeTypeAndValue
-import org.bouncycastle.asn1.x500.X500Name
-import org.bouncycastle.asn1.x500.X500NameBuilder
-import org.bouncycastle.asn1.x500.style.BCStyle
+import java.io.IOException
 import java.util.Locale
 import javax.security.auth.x500.X500Principal
 
@@ -31,7 +27,7 @@ import javax.security.auth.x500.X500Principal
 @Suppress("LongParameterList")
 @CordaSerializable
 open class MemberX500Name(
-    val commonName: String?,
+    val commonName: String,
     val organisationUnit: String?,
     val organisation: String,
     val locality: String,
@@ -47,13 +43,6 @@ open class MemberX500Name(
                 state = null,
                 country = country
             )
-
-    /**
-     * @param organisation name of the organisation.
-     * @param locality locality of the organisation, typically nearest major city.
-     * @param country country the organisation is in, as an ISO 3166-1 2-letter country code.
-     */
-    constructor(organisation: String, locality: String, country: String) : this(null, null, organisation, locality, null, country)
 
     init {
         // Legal name checks.
@@ -72,10 +61,8 @@ open class MemberX500Name(
                 "Organisation Unit attribute (OU) must contain less then $MAX_LENGTH_ORGANISATION_UNIT characters."
             }
         }
-        commonName?.let {
-            require(it.length < MAX_LENGTH_COMMON_NAME) {
-                "Common Name attribute (CN) must contain less then $MAX_LENGTH_COMMON_NAME characters."
-            }
+        require(commonName.length < MAX_LENGTH_COMMON_NAME) {
+            "Common Name attribute (CN) must contain less then $MAX_LENGTH_COMMON_NAME characters."
         }
     }
 
@@ -86,51 +73,62 @@ open class MemberX500Name(
         const val MAX_LENGTH_ORGANISATION_UNIT = 64
         const val MAX_LENGTH_COMMON_NAME = 64
 
-        private val supportedAttributes = setOf(BCStyle.O, BCStyle.C, BCStyle.L, BCStyle.CN, BCStyle.ST, BCStyle.OU)
         private const val unspecifiedCountry = "ZZ"
         @Suppress("SpreadOperator")
         private val countryCodes: Set<String> = setOf(*Locale.getISOCountries(), unspecifiedCountry)
 
         @JvmStatic
         fun build(principal: X500Principal): MemberX500Name {
-            val attrsMap = principal.toAttributesMap(supportedAttributes)
-            val CN = attrsMap[BCStyle.CN]
-            val OU = attrsMap[BCStyle.OU]
-            val O = requireNotNull(attrsMap[BCStyle.O]) { "Corda X.500 names must include an O attribute" }
-            val L = requireNotNull(attrsMap[BCStyle.L]) { "Corda X.500 names must include an L attribute" }
-            val ST = attrsMap[BCStyle.ST]
-            val C = requireNotNull(attrsMap[BCStyle.C]) { "Corda X.500 names must include an C attribute" }
+            require(principal.encoded.isNotEmpty())
+            throw NotImplementedError()
+            /*
+            val x500Name = X500Name(principal.encoded)
+            val CN = requireNotNull(x500Name.commonName) { "Corda X.500 names must include an CN attribute" }
+            val OU = x500Name.organizationalUnit
+            val O = requireNotNull(x500Name.organization) { "Corda X.500 names must include an O attribute" }
+            val L = requireNotNull(x500Name.locality) { "Corda X.500 names must include an L attribute" }
+            val ST = x500Name.state
+            val C = requireNotNull(x500Name.country) { "Corda X.500 names must include an C attribute" }
             return MemberX500Name(CN, OU, O, L, ST, C)
+             */
         }
 
         @JvmStatic
         fun parse(name: String): MemberX500Name = build(X500Principal(name))
     }
 
-    @Transient
-    private var _x500Principal: X500Principal? = null
-
     /** Return the [X500Principal] equivalent of this name. */
-    val x500Principal: X500Principal
-        get() {
-            return _x500Principal ?: X500Principal(this.toX500Name().encoded).also { _x500Principal = it }
+    val x500Principal: X500Principal by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        X500Principal(toString())
+    }
+
+    override fun toString(): String {
+        val result = StringBuilder()
+        commonName.let {
+            result.append("CN=")
+            append(result, it)
         }
-
-    override fun toString(): String = x500Principal.toString()
-
-    /**
-     * Return the underlying X.500 name from this Corda-safe X.500 name. These are guaranteed to have a consistent
-     * ordering, such that their `toString()` function returns the same value every time for the same [CordaX500Name].
-     */
-    private fun toX500Name(): X500Name {
-        return X500NameBuilder(BCStyle.INSTANCE).apply {
-            addRDN(BCStyle.C, country)
-            state?.let { addRDN(BCStyle.ST, it) }
-            addRDN(BCStyle.L, locality)
-            addRDN(BCStyle.O, organisation)
-            organisationUnit?.let { addRDN(BCStyle.OU, it) }
-            commonName?.let { addRDN(BCStyle.CN, it) }
-        }.build()
+        organisationUnit?.let {
+            result.append(", OU=")
+            append(result, it)
+        }
+        organisation.let {
+            result.append(", O=")
+            append(result, it)
+        }
+        locality.let {
+            result.append(", L=")
+            append(result, it)
+        }
+        state?.let {
+            result.append(", ST=")
+            append(result, it)
+        }
+        country.let {
+            result.append(", C=")
+            append(result, it)
+        }
+        return result.toString()
     }
 
     override fun equals(other: Any?): Boolean {
@@ -150,7 +148,7 @@ open class MemberX500Name(
     }
 
     override fun hashCode(): Int {
-        var result = commonName?.hashCode() ?: 0
+        var result = commonName.hashCode()
         result = 31 * result + (organisationUnit?.hashCode() ?: 0)
         result = 31 * result + organisation.hashCode()
         result = 31 * result + locality.hashCode()
@@ -158,33 +156,105 @@ open class MemberX500Name(
         result = 31 * result + country.hashCode()
         return result
     }
-}
 
-/**
- * Transforms the X500Principal to the attributes map.
- *
- * @param supportedAttributes list of supported attributes. If empty, it accepts all the attributes.
- *
- * @return attributes map for this principal
- * @throws IllegalArgumentException if this principal consists of duplicated attributes or the attribute is not supported.
- *
- */
-private fun X500Principal.toAttributesMap(supportedAttributes: Set<ASN1ObjectIdentifier> = emptySet()): Map<ASN1ObjectIdentifier, String> {
-    val x500Name = X500Name.getInstance(this.encoded)
-    val attrsMap: Map<ASN1ObjectIdentifier, String> = x500Name.rdNs
-        .flatMap { it.typesAndValues.asList() }
-        .groupBy(AttributeTypeAndValue::getType, AttributeTypeAndValue::getValue)
-        .mapValues {
-            require(it.value.size == 1) { "Duplicate attribute ${it.key}" }
-            it.value[0].toString()
+    private fun append(builder: StringBuilder, valStr: String): StringBuilder {
+        try {
+                var quoteNeeded = false
+                val sbuffer = StringBuilder()
+                var previousWhite = false
+                val escapees = ",+=\n<>#;\\\""
+
+                /*
+                 * Special characters (e.g. AVA list separators) cause strings
+                 * to need quoting, or at least escaping.  So do leading or
+                 * trailing spaces, and multiple internal spaces.
+                 */
+                val length = valStr.length
+                val alreadyQuoted = length > 1 && valStr[0] == '\"' && valStr[length - 1] == '\"'
+                for (i in 0 until length) {
+                    val c = valStr[i]
+                    if (alreadyQuoted && (i == 0 || i == length - 1)) {
+                        sbuffer.append(c)
+                        continue
+                    }
+                    if (isPrintableStringChar(c) || escapees.indexOf(c) >= 0) {
+                        // quote if leading whitespace or special chars
+                        if (!quoteNeeded &&
+                            (i == 0 && (c == ' ' || c == '\n') ||
+                                    escapees.indexOf(c) >= 0)
+                        ) {
+                            quoteNeeded = true
+                        }
+
+                        // quote if multiple internal whitespace
+                        if (!(c == ' ' || c == '\n')) {
+                            // escape '"' and '\'
+                            if (c == '"' || c == '\\') {
+                                sbuffer.append('\\')
+                            }
+                            previousWhite = false
+                        } else {
+                            if (!quoteNeeded && previousWhite) {
+                                quoteNeeded = true
+                            }
+                            previousWhite = true
+                        }
+                        sbuffer.append(c)
+                    } else {
+
+                        // append non-printable/non-escaped char
+                        previousWhite = false
+                        sbuffer.append(c)
+                    }
+                }
+
+                // quote if trailing whitespace
+                if (sbuffer.isNotEmpty()) {
+                    val trailChar = sbuffer[sbuffer.length - 1]
+                    if (trailChar == ' ' || trailChar == '\n') {
+                        quoteNeeded = true
+                    }
+                }
+                // Emit the string ... quote it if needed
+                // if string is already quoted, don't re-quote
+                if (!alreadyQuoted && quoteNeeded) {
+                    builder.append('\"')
+                        .append(sbuffer)
+                        .append('\"')
+                } else {
+                    builder.append(sbuffer)
+                }
+        } catch (e: IOException) {
+            throw IllegalArgumentException("AVA string conversion")
         }
-    if (supportedAttributes.isNotEmpty()) {
-        (attrsMap.keys - supportedAttributes).let { unsupported ->
-            require(unsupported.isEmpty()) {
-                "The following attribute${if (unsupported.size > 1) "s are" else " is"} not supported in Corda: " +
-                        unsupported.map { BCStyle.INSTANCE.oidToDisplayName(it) }
+        return builder
+    }
+
+    /**
+     * Determine if a character is one of the permissible characters for
+     * PrintableString:
+     * A-Z, a-z, 0-9, space, apostrophe (39), left and right parentheses,
+     * plus sign, comma, hyphen, period, slash, colon, equals sign,
+     * and question mark.
+     *
+     * Characters that are *not* allowed in PrintableString include
+     * exclamation point, quotation mark, number sign, dollar sign,
+     * percent sign, ampersand, asterisk, semicolon, less than sign,
+     * greater than sign, at sign, left and right square brackets,
+     * backslash, circumflex (94), underscore, back quote (96),
+     * left and right curly brackets, vertical line, tilde,
+     * and the control codes (0-31 and 127).
+     *
+     * This list is based on X.680 (the ASN.1 spec).
+     */
+    open fun isPrintableStringChar(ch: Char): Boolean {
+        return if (ch in 'a'..'z' || ch in 'A'..'Z' || ch in '0'..'9') {
+            true
+        } else {
+            when (ch) {
+                ' ', '\'', '(', ')', '+', ',', '-', '.', '/', ':', '=', '?' -> true
+                else -> false
             }
         }
     }
-    return attrsMap
 }
