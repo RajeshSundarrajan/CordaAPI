@@ -1,7 +1,14 @@
+@file:Suppress("JAVA_MODULE_DOES_NOT_EXPORT_PACKAGE")
+
+/**
+ * We are not allowing escape characters due how the LegalNameValidator is done
+ */
+
 package net.corda.v5.membership.identity
 
 import net.corda.v5.base.annotations.CordaSerializable
 import net.corda.v5.membership.identity.internal.LegalNameValidator
+import sun.security.x509.X500Name
 import java.io.IOException
 import java.util.Locale
 import javax.security.auth.x500.X500Principal
@@ -79,9 +86,6 @@ open class MemberX500Name(
 
         @JvmStatic
         fun build(principal: X500Principal): MemberX500Name {
-            require(principal.encoded.isNotEmpty())
-            throw NotImplementedError()
-            /*
             val x500Name = X500Name(principal.encoded)
             val CN = requireNotNull(x500Name.commonName) { "Corda X.500 names must include an CN attribute" }
             val OU = x500Name.organizationalUnit
@@ -90,7 +94,6 @@ open class MemberX500Name(
             val ST = x500Name.state
             val C = requireNotNull(x500Name.country) { "Corda X.500 names must include an C attribute" }
             return MemberX500Name(CN, OU, O, L, ST, C)
-             */
         }
 
         @JvmStatic
@@ -179,10 +182,7 @@ open class MemberX500Name(
                     }
                     if (isPrintableStringChar(c) || escapees.indexOf(c) >= 0) {
                         // quote if leading whitespace or special chars
-                        if (!quoteNeeded &&
-                            (i == 0 && (c == ' ' || c == '\n') ||
-                                    escapees.indexOf(c) >= 0)
-                        ) {
+                        if (!quoteNeeded && (i == 0 && (c == ' ' || c == '\n') || escapees.indexOf(c) >= 0)) {
                             quoteNeeded = true
                         }
 
@@ -201,7 +201,6 @@ open class MemberX500Name(
                         }
                         sbuffer.append(c)
                     } else {
-
                         // append non-printable/non-escaped char
                         previousWhite = false
                         sbuffer.append(c)

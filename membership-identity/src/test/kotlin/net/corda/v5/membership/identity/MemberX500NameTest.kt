@@ -1,8 +1,11 @@
 package net.corda.v5.membership.identity
 
+import org.bouncycastle.asn1.x500.X500NameBuilder
+import org.bouncycastle.asn1.x500.style.BCStyle
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
+import javax.security.auth.x500.X500Principal
 import kotlin.test.assertFailsWith
 
 class MemberX500NameTest {
@@ -12,6 +15,38 @@ class MemberX500NameTest {
         private val organisation = "Bank A"
         private val locality = "New York"
         private val country = "US"
+    }
+
+    private fun MemberX500Name.toEncoded(): ByteArray {
+        return X500NameBuilder(BCStyle.INSTANCE).apply {
+            addRDN(BCStyle.C, country)
+            state?.let { addRDN(BCStyle.ST, it) }
+            addRDN(BCStyle.L, locality)
+            addRDN(BCStyle.O, organisation)
+            organisationUnit?.let { addRDN(BCStyle.OU, it) }
+            addRDN(BCStyle.CN, commonName)
+        }.build().encoded
+    }
+
+    @Test
+    fun `Should convert to string in predictable order`() {
+        val member1 = MemberX500Name.parse("O=Bank A, L=New York, C=US, OU=Org Unit, CN=Service Name")
+        val member3 = MemberX500Name(
+            organisation ="Bank, A",
+            locality = "New+York",
+            country = "US",
+            state = null,
+            organisationUnit = "Org=Unit",
+            commonName = "Service<> Name"
+        )
+        val principal1 = X500Principal("CN=Service Name, OU=Org Unit, O=Bank A, L=New York, C=US")
+        val principal2 = X500Principal(member1.toEncoded())
+        val principal3 = member3.x500Principal
+        assertEquals(principal1.toString(), member1.toString())
+        assertEquals(principal2.toString(), member1.toString())
+        assertEquals(principal3.toString(), member3.toString())
+        assertEquals("CN=Service Name, OU=Org Unit, O=Bank A, L=New York, C=US", member1.toString())
+        assertEquals("CN=\"Service<> Name\", OU=\"Org=Unit\", O=\"Bank, A\", L=\"New+York\", C=US", member3.toString())
     }
 
     @Test
@@ -37,14 +72,10 @@ class MemberX500NameTest {
     }
 
     @Test
-    fun `legal entity name`() {
-        val name = MemberX500Name.parse("O=Bank A, L=New York, C=US")
-        assertNull(name.commonName)
-        assertNull(name.organisationUnit)
-        assertEquals(organisation, name.organisation)
-        assertEquals(locality, name.locality)
-        assertEquals(MemberX500Name.parse(name.toString()), name)
-        assertEquals(MemberX500Name.build(name.x500Principal), name)
+    fun `legal entity name is required`() {
+        assertFailsWith<IllegalArgumentException> {
+            MemberX500Name_NoUse.parse("O=Bank A, L=New York, C=US")
+        }
     }
 
     @Test

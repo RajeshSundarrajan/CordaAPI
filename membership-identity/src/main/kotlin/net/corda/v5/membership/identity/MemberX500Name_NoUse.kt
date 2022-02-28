@@ -1,13 +1,23 @@
-package net.corda.v5.membership.identity
+/**
+* NO USE as all of those:
+ *
+ * import sun.security.util.DerOutputStream
+ * import sun.security.util.DerValue
+ * import sun.security.util.ObjectIdentifier
+ * import sun.security.x509.AVA
+ * import sun.security.x509.RDN
+ * import sun.security.x509.X500Name
+ *
+ * Are not exportable from java.base
+ *
+ * You will get error:
+ *      "Symbol is declared in module 'java.base' which does not export package 'sun.security.util'"
+ *
+ * Kotlin fix: https://dev.to/h3xstream/how-to-solve-symbol-is-declared-in-module-x-which-does-not-export-package-y-303g
+ */
+@file:Suppress("JAVA_MODULE_DOES_NOT_EXPORT_PACKAGE")
 
-// NO USE as all those
-// import sun.security.util.DerOutputStream
-// import sun.security.util.DerValue
-// import sun.security.util.ObjectIdentifier
-// import sun.security.x509.AVA
-// import sun.security.x509.RDN
-// import sun.security.x509.X500Name
-// are not exportable from java.base
+package net.corda.v5.membership.identity
 
 import net.corda.v5.base.annotations.CordaSerializable
 import net.corda.v5.membership.identity.internal.LegalNameValidator
@@ -41,7 +51,7 @@ import javax.security.auth.x500.X500Principal
 @Suppress("LongParameterList")
 @CordaSerializable
 open class MemberX500Name_NoUse(
-    val commonName: String?,
+    val commonName: String,
     val organisationUnit: String?,
     val organisation: String,
     val locality: String,
@@ -57,13 +67,6 @@ open class MemberX500Name_NoUse(
                 state = null,
                 country = country
             )
-
-    /**
-     * @param organisation name of the organisation.
-     * @param locality locality of the organisation, typically nearest major city.
-     * @param country country the organisation is in, as an ISO 3166-1 2-letter country code.
-     */
-    constructor(organisation: String, locality: String, country: String) : this(null, null, organisation, locality, null, country)
 
     init {
         // Legal name checks.
@@ -82,10 +85,8 @@ open class MemberX500Name_NoUse(
                 "Organisation Unit attribute (OU) must contain less then $MAX_LENGTH_ORGANISATION_UNIT characters."
             }
         }
-        commonName?.let {
-            require(it.length < MAX_LENGTH_COMMON_NAME) {
-                "Common Name attribute (CN) must contain less then $MAX_LENGTH_COMMON_NAME characters."
-            }
+        require(commonName.length < MAX_LENGTH_COMMON_NAME) {
+            "Common Name attribute (CN) must contain less then $MAX_LENGTH_COMMON_NAME characters."
         }
     }
 
@@ -163,7 +164,7 @@ open class MemberX500Name_NoUse(
      * Return the underlying X.500 name from this Corda-safe X.500 name. These are guaranteed to have a consistent
      * ordering, such that their `toString()` function returns the same value every time for the same [CordaX500Name].
      */
-    private fun toOrderedAvas(): Array<AVA> {
+    fun toOrderedAvas(): Array<AVA> {
         val avas = mutableListOf(
             AVA(ObjectIdentifiers.C, DerValue(country))
         )
@@ -171,7 +172,7 @@ open class MemberX500Name_NoUse(
         avas.add(AVA(ObjectIdentifiers.L, DerValue(locality)))
         avas.add(AVA(ObjectIdentifiers.O, DerValue(organisation)))
         organisationUnit?.let { avas.add(AVA(ObjectIdentifiers.OU, DerValue(it))) }
-        commonName?.let { avas.add(AVA(ObjectIdentifiers.CN, DerValue(it))) }
+        avas.add(AVA(ObjectIdentifiers.CN, DerValue(commonName)))
         return avas.toTypedArray()
     }
 
@@ -192,7 +193,7 @@ open class MemberX500Name_NoUse(
     }
 
     override fun hashCode(): Int {
-        var result = commonName?.hashCode() ?: 0
+        var result = commonName.hashCode()
         result = 31 * result + (organisationUnit?.hashCode() ?: 0)
         result = 31 * result + organisation.hashCode()
         result = 31 * result + locality.hashCode()
