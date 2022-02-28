@@ -72,10 +72,14 @@ class MemberX500NameTest {
     }
 
     @Test
-    fun `legal entity name is required`() {
-        assertFailsWith<IllegalArgumentException> {
-            MemberX500Name_NoUse.parse("O=Bank A, L=New York, C=US")
-        }
+    fun `legal entity name`() {
+        val name = MemberX500Name.parse("O=Bank A, L=New York, C=US")
+        assertNull(name.commonName)
+        assertNull(name.organisationUnit)
+        assertEquals(organisation, name.organisation)
+        assertEquals(locality, name.locality)
+        assertEquals(MemberX500Name.parse(name.toString()), name)
+        assertEquals(MemberX500Name.build(name.x500Principal), name)
     }
 
     @Test
@@ -213,6 +217,17 @@ class MemberX500NameTest {
     fun `create MemberX500Name without organisationUnit and state`() {
         val member = MemberX500Name(commonName, organisation, locality, country)
         assertEquals(commonName, member.commonName)
+        assertNull(member.organisationUnit)
+        assertEquals(organisation, member.organisation)
+        assertEquals(locality, member.locality)
+        assertNull(member.state)
+        assertEquals(country, member.country)
+    }
+
+    @Test
+    fun `create MemberX500Name without commonName, organisationUnit and state`() {
+        val member = MemberX500Name(organisation, locality, country)
+        assertNull(member.commonName)
         assertNull(member.organisationUnit)
         assertEquals(organisation, member.organisation)
         assertEquals(locality, member.locality)
