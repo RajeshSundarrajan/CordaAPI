@@ -1,7 +1,6 @@
 package net.corda.v5.membership.identity
 
 import net.corda.v5.base.annotations.CordaSerializable
-import net.corda.v5.membership.identity.internal.LegalNameValidator
 import java.util.Locale
 import javax.naming.directory.BasicAttributes
 import javax.naming.ldap.LdapName
@@ -13,13 +12,11 @@ import javax.security.auth.x500.X500Principal
  * supports, and requires that organisation, locality and country attributes are specified. See also RFC 4519 for
  * the underlying attribute type definitions.
  *
- * This is the base class for CordaX500Name. Should be used for modules which are below application.
- *
  * @property commonName optional name by the which the entity is usually known. Used only for services (for
  * organisations, the [organisation] property is the name). Corresponds to the "CN" attribute type.
  * @property organisationUnit optional name of a unit within the [organisation]. Corresponds to the "OU" attribute type.
  * @property organisation name of the organisation. Corresponds to the "O" attribute type.
- * @property locality locality of the organisation, typically nearest major city. For distributed services this would be
+ * @property locality locality of the organisation, typically the nearest major city. For distributed services this would be
  * where one of the organisations is based. Corresponds to the "L" attribute type.
  * @property state the full name of the state or province the organisation is based in. Corresponds to the "ST"
  * attribute type.
@@ -28,7 +25,7 @@ import javax.security.auth.x500.X500Principal
  */
 @Suppress("LongParameterList")
 @CordaSerializable
-open class MemberX500Name(
+class MemberX500Name(
     val commonName: String?,
     val organisationUnit: String?,
     val organisation: String,
@@ -36,78 +33,30 @@ open class MemberX500Name(
     val state: String?,
     val country: String
 ) {
-    constructor(commonName: String, organisation: String, locality: String, country: String) :
-            this(
-                commonName = commonName,
-                organisationUnit = null,
-                organisation = organisation,
-                locality = locality,
-                state = null,
-                country = country
-            )
-    /**
-     * @param organisation name of the organisation.
-     * @param locality locality of the organisation, typically nearest major city.
-     * @param country country the organisation is in, as an ISO 3166-1 2-letter country code.
-     */
-    constructor(organisation: String, locality: String, country: String) :
-            this(null, null, organisation, locality, null, country)
-
-    init {
-        // Legal name checks.
-        LegalNameValidator.validateOrganization(organisation)
-        require(organisation.length < MAX_LENGTH_ORGANISATION) {
-            "Organisation attribute (O) must contain less then $MAX_LENGTH_ORGANISATION characters."
-        }
-
-        require(country in countryCodes) { "Invalid country code $country" }
-
-//        require(locality.isNotBlank()) {
-//            "Locality attribute (L) must not be blank."
-//        }
-        require(locality.length < MAX_LENGTH_LOCALITY) { "Locality attribute (L) must contain less then $MAX_LENGTH_LOCALITY characters." }
-
-        state?.let {
-            require(it.isNotBlank()) {
-                "State attribute (ST) if specified then it must be not blank."
-            }
-            require(it.length < MAX_LENGTH_STATE) { "State attribute (ST) must contain less then $MAX_LENGTH_STATE characters." }
-        }
-
-        organisationUnit?.let {
-//            require(it.isNotBlank()) {
-//                "Organisation unit attribute (OU) if specified then it must be not blank."
-//            }
-            require(it.length < MAX_LENGTH_ORGANISATION_UNIT) {
-                "Organisation Unit attribute (OU) must contain less then $MAX_LENGTH_ORGANISATION_UNIT characters."
-            }
-        }
-
-        commonName?.let {
-//            require(it.isNotBlank()) {
-//                "Common name attribute (CN) must not be blank."
-//            }
-            require(it.length < MAX_LENGTH_COMMON_NAME) {
-                "Common Name attribute (CN) must contain less then $MAX_LENGTH_COMMON_NAME characters."
-            }
-        }
-    }
-
     companion object {
+        // do we address that ?
+        // https://github.com/corda/platform-eng-design/blob/CORE-455-yashnabar-x500restrictionsdoc/core/corda-5/corda-5.0/the-host/relaxed-x500-constraints.md#proposed-changes-in-corda-5
+        // considering that for the certs the limits are quite harsh (which may not be a problem as)
+        // https://datatracker.ietf.org/doc/html/rfc5280 (page 122-123)
+        // ub-common-name INTEGER ::= 64
+        // ub-locality-name INTEGER ::= 128
+        // ub-state-name INTEGER ::= 128
+        // ub-organization-name INTEGER ::= 64
+        // ub-organizational-unit-name INTEGER ::= 64
         const val MAX_LENGTH_ORGANISATION = 128
         const val MAX_LENGTH_LOCALITY = 64
         const val MAX_LENGTH_STATE = 64
         const val MAX_LENGTH_ORGANISATION_UNIT = 64
         const val MAX_LENGTH_COMMON_NAME = 64
 
-        const val ATTRIBUTE_COMMON_NAME = "CN"
-        const val ATTRIBUTE_ORGANISATION_UNIT = "OU"
-        const val ATTRIBUTE_ORGANISATION = "O"
-        const val ATTRIBUTE_LOCALITY = "L"
-        const val ATTRIBUTE_STATE = "STATE"
-        const val ATTRIBUTE_COUNTRY = "C"
+        private const val ATTRIBUTE_COMMON_NAME = "CN"
+        private const val ATTRIBUTE_ORGANISATION_UNIT = "OU"
+        private const val ATTRIBUTE_ORGANISATION = "O"
+        private const val ATTRIBUTE_LOCALITY = "L"
+        private const val ATTRIBUTE_STATE = "STATE"
+        private const val ATTRIBUTE_COUNTRY = "C"
 
-        val supportedAttributes = setOf(
+        private val supportedAttributes = setOf(
             ATTRIBUTE_COMMON_NAME,
             ATTRIBUTE_ORGANISATION_UNIT,
             ATTRIBUTE_ORGANISATION,
@@ -116,19 +65,23 @@ open class MemberX500Name(
             ATTRIBUTE_COUNTRY
         )
 
-        private const val unspecifiedCountry = "ZZ"
+        private val countryCodes: Set<String> = Locale.getISOCountries().toSet()
 
-        @Suppress("SpreadOperator")
-        private val countryCodes: Set<String> = setOf(*Locale.getISOCountries(), unspecifiedCountry)
-
+        /**
+         * Creates an instance of [MemberX500Name] from [X500Principal]
+         */
         @JvmStatic
         fun build(principal: X500Principal): MemberX500Name = parse(principal.toString())
 
+        /**
+         * Creates an instance of [MemberX500Name] by parsing the string representation of X500 name, like
+         * "CN=Alice, OU=Engineering, O=R3, L=London, Country=UK".
+         * Constrains are teh same as for [toAttributesMap] plus some additional constrains:
+         * - O, L, C are required attributes
+         */
         @JvmStatic
         fun parse(name: String): MemberX500Name {
-            // X500Principal is used to sanitise the syntax as the LdapName will let through such string as
-            // "O=VALID, L=IN,VALID, C=DE, OU=VALID, CN=VALID" where the (L) have to be escaped
-            val attrsMap = LdapName(X500Principal(name).toString()).toAttributesMap(supportedAttributes)
+            val attrsMap = toAttributesMap(name)
             val CN = attrsMap[ATTRIBUTE_COMMON_NAME]
             val OU = attrsMap[ATTRIBUTE_ORGANISATION_UNIT]
             val O = requireNotNull(attrsMap[ATTRIBUTE_ORGANISATION]) { "Corda X.500 names must include an O attribute" }
@@ -139,24 +92,30 @@ open class MemberX500Name(
         }
 
         /**
-         * Transforms the X500Principal to the attributes map.
-         *
-         * @param supportedAttributes list of supported attributes. If empty, it accepts all the attributes.
-         *
-         * @return attributes map for this principal
-         * @throws IllegalArgumentException if this principal consists of duplicated attributes or the attribute is not supported.
-         *
+         * Parses the string representation of X500 name and builds the attribute map where the key is the
+         * attributes keys, like CN, O, etc.
+         * Constrains:
+         * - the RDNs cannot be multivalued
+         * - the attributes must have single value
+         * - the only supported attributes are C, ST, L, O, OU, CN
+         * - attributes cannot be duplicated
          */
-        private fun LdapName.toAttributesMap(supportedAttributes: Set<String> = emptySet()): Map<String, String> {
+        @JvmStatic
+        fun toAttributesMap(name: String): Map<String, String> {
             val result = mutableMapOf<String, String>()
-            rdns.forEach { rdn ->
+            // X500Principal is used to sanitise the syntax as the LdapName will let through such string as
+            // "O=VALID, L=IN,VALID, C=DE, OU=VALID, CN=VALID" where the (L) have to be escaped
+            LdapName(X500Principal(name).toString()).rdns.forEach { rdn ->
+                require(rdn.size() == 1) {
+                    "The RDN '$rdn' must not be multi-valued."
+                }
                 rdn.toAttributes().all.asSequence().forEach {
                     require(it.size() == 1) {
-                        "Attributes ${it.id} have to contain only single value."
+                        "Attribute '${it.id}' have to contain only single value."
                     }
                     val value = it.get(0)
                     require(value is String) {
-                        "Attribute's ${it.id} value must be a string"
+                        "Attribute's '${it.id}' value must be a string"
                     }
                     require(!result.containsKey(it.id)) {
                         "Duplicate attribute ${it.id}"
@@ -176,11 +135,81 @@ open class MemberX500Name(
         }
     }
 
-    /** Return the [X500Principal] equivalent of this name. */
+    /**
+     * @property commonName optional name by the which the entity is usually known. Used only for services (for
+     * organisations, the [organisation] property is the name). Corresponds to the "CN" attribute type.
+     * @param organisation name of the organisation.
+     * @param locality locality of the organisation, typically the nearest major city.
+     * @param country country the organisation is in, as an ISO 3166-1 2-letter country code.
+     */
+    constructor(commonName: String, organisation: String, locality: String, country: String) :
+            this(
+                commonName = commonName,
+                organisationUnit = null,
+                organisation = organisation,
+                locality = locality,
+                state = null,
+                country = country
+            )
+
+    /**
+     * @param organisation name of the organisation.
+     * @param locality locality of the organisation, typically nearest major city.
+     * @param country country the organisation is in, as an ISO 3166-1 2-letter country code.
+     */
+    constructor(organisation: String, locality: String, country: String) :
+            this(null, null, organisation, locality, null, country)
+
+    init {
+        require(country in countryCodes) { "Invalid country code $country" }
+
+        state?.let {
+            require(it.isNotBlank()) {
+                "State attribute (ST) if specified then it must be not blank."
+            }
+            require(it.length < MAX_LENGTH_STATE) { "State attribute (ST) must contain less then $MAX_LENGTH_STATE characters." }
+        }
+
+        require(locality.isNotBlank()) {
+            "Locality attribute (L) must not be blank."
+        }
+        require(locality.length < MAX_LENGTH_LOCALITY) { "Locality attribute (L) must contain less then $MAX_LENGTH_LOCALITY characters." }
+
+        require(organisation.isNotBlank()) {
+            "Organisation attribute (O) if specified then it must be not blank."
+        }
+        require(organisation.length < MAX_LENGTH_ORGANISATION) {
+            "Organisation attribute (O) must contain less then $MAX_LENGTH_ORGANISATION characters."
+        }
+
+        organisationUnit?.let {
+            require(it.isNotBlank()) {
+                "Organisation unit attribute (OU) if specified then it must be not blank."
+            }
+            require(it.length < MAX_LENGTH_ORGANISATION_UNIT) {
+                "Organisation Unit attribute (OU) must contain less then $MAX_LENGTH_ORGANISATION_UNIT characters."
+            }
+        }
+
+        commonName?.let {
+            require(it.isNotBlank()) {
+                "Common name attribute (CN) must not be blank."
+            }
+            require(it.length < MAX_LENGTH_COMMON_NAME) {
+                "Common Name attribute (CN) must contain less then $MAX_LENGTH_COMMON_NAME characters."
+            }
+        }
+    }
+
+    /**
+     * Returns the [X500Principal] equivalent of this name where the order of RDNs is
+     * C, ST, L, O, OU, CN (the printing order would be reversed)
+     */
     val x500Principal: X500Principal by lazy(LazyThreadSafetyMode.PUBLICATION) {
         val rdns = mutableListOf<Rdn>().apply {
             add(Rdn(BasicAttributes(ATTRIBUTE_COUNTRY, country)))
-            state?.let { add(Rdn(BasicAttributes(ATTRIBUTE_STATE, it)))
+            state?.let {
+                add(Rdn(BasicAttributes(ATTRIBUTE_STATE, it)))
             }
             add(Rdn(BasicAttributes(ATTRIBUTE_LOCALITY, locality)))
             add(Rdn(BasicAttributes(ATTRIBUTE_ORGANISATION, organisation)))
@@ -194,6 +223,9 @@ open class MemberX500Name(
         X500Principal(LdapName(rdns).toString())
     }
 
+    /**
+     * Returns the string equivalent of this name where the order of RDNs is CN, OU, O, L, ST, C
+     */
     override fun toString(): String = x500Principal.toString()
 
     override fun equals(other: Any?): Boolean {

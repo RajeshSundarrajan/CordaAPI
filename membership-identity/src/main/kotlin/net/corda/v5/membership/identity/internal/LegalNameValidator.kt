@@ -1,6 +1,5 @@
 package net.corda.v5.membership.identity.internal
 
-import net.corda.v5.membership.identity.MemberX500Name
 import java.text.Normalizer
 import javax.naming.directory.BasicAttributes
 import javax.naming.ldap.LdapName
@@ -80,7 +79,7 @@ internal object LegalNameValidator {
             override fun validate(legalName: String) {
                 // This will throw IllegalArgumentException if the name does not comply with X500 name format.
                 val rdns = listOf(
-                    Rdn(BasicAttributes(MemberX500Name.ATTRIBUTE_ORGANISATION, legalName)
+                    Rdn(BasicAttributes("O", legalName)
                     )
                 )
                 X500Principal(LdapName(rdns).toString())
