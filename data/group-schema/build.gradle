@@ -1,0 +1,7 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm'
+    id 'com.r3.internal.gradle.plugins.r3Publish'
+    id 'corda-api.common-library'
+}
+
+description 'Schema Definition for Group Policy'

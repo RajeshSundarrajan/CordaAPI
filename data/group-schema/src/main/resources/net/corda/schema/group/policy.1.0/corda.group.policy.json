@@ -1,0 +1,245 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://corda.r3.com/net/corda/schema/group/policy/1.0/corda.group.policy.json",
+  "title": "Corda Group Policy Schema",
+  "description": "Schema for the group policy file included in distributed CPIs.",
+  "type": "object",
+  "required": [
+    "fileFormatVersion",
+    "groupId",
+    "registrationProtocol",
+    "synchronisationProtocol"
+  ],
+  "properties": {
+    "fileFormatVersion": {
+      "description": "The version of the schema which this file format adheres to.",
+      "type": "number"
+    },
+    "groupId": {
+      "description": "The group ID that this file relates to, or constant 'CREATE_ID' if a new ID must be generated. A new ID should be generated only for an MGM.",
+      "type": "string"
+    },
+    "registrationProtocol": {
+      "description": "The fully qualified class name of the registration protocol implementation class.",
+      "type": "string"
+    },
+    "synchronisationProtocol": {
+      "description": "The fully qualified class name of the synchronisation protocol implementation class.",
+      "type": "string"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "not": {
+          "properties": {
+            "groupId": {
+              "$ref": "#/$defs/mgmGroupId"
+            }
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "fileFormatVersion",
+          "groupId",
+          "registrationProtocol",
+          "synchronisationProtocol",
+          "protocolParameters",
+          "p2pParameters",
+          "mgmInfo"
+        ],
+        "properties": {
+          "protocolParameters": {
+            "$ref": "#/$defs/protocolParameters"
+          },
+          "p2pParameters":  {
+            "$ref": "#/$defs/p2pParameters"
+          },
+          "mgmInfo": {
+            "$ref": "#/$defs/mgmInfo"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "protocolParameters": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "mgmGroupId": {
+      "const": "CREATE_ID"
+    },
+    "mgmInfo": {
+      "description": "The member information of the group MGM which members should use to join a group.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "The X500Name of the group MGM.",
+          "type": "string"
+        },
+        "sessionKey": {
+          "description": "The public key belonging to the MGM to be used for session initiation.",
+          "type": "string"
+        },
+        "certificate": {
+          "description": "The full certificate chain for the session key certificate.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "ecdhKey": {
+          "description": "Static DH key for ECIES encryption used during member registration.",
+          "type": "string"
+        },
+        "endpoints": {
+          "description": "The endpoints available for use for P2P communication with the MGM.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "url": {
+                "description": "The URL for the endpoint.",
+                "type": "string"
+              },
+              "protocolVersion": {
+                "description": "Protocol version supported by this endpoint.",
+                "type": "integer"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "platformVersion": {
+          "description": "The version of the Corda platform that the MGM is running on.",
+          "type": "integer"
+        },
+        "softwareVersion": {
+          "description": "The software version of Corda that the MGM is running on.",
+          "type": "string"
+        },
+        "serial": {
+          "description": "An arbitrary number incremented each time the MemberInfo is changed.",
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false
+    },
+    "p2pParameters": {
+      "description": "All parameters required to configure the P2P communication before registration and synchronisation.",
+      "type": "object",
+      "properties": {
+        "sessionTrustStore": {
+          "description": "The trust roots for session initiation certificate verification.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sessionPki": {
+          "description": "The PKI type to use for session handling.",
+          "enum": [
+            "Standard",
+            "Corda4",
+            "NoPKI"
+          ]
+        },
+        "tlsTrustStore": {
+          "description": "The trust roots for TLS certificate verification.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "tlsPki": {
+          "description": "The PKI type to use for TLS handling.",
+          "enum": [
+            "Standard",
+            "Corda4"
+          ]
+        },
+        "p2pProtocolMode": {
+          "description": "The type of end to end session to use.",
+          "enum": [
+            "Authentication",
+            "Authentication_Encryption"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "sessionPki",
+        "tlsTrustStore",
+        "tlsPki",
+        "p2pProtocolMode"
+      ],
+      "anyOf": [
+        {
+          "if": {
+            "not": {
+              "properties": {
+                "sessionPki": {
+                  "const": "NoPKI"
+                }
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "sessionTrustStore"
+            ]
+          }
+        }
+      ]
+    },
+    "protocolParameters": {
+      "description": "All parameters required to perform the registration or synchronisation protocols.",
+      "type": "object",
+      "properties": {
+        "sessionKeyPolicy": {
+          "description": "Whether to use combined or distinct keys for ledger signing and end-to-end session authentication",
+          "enum": [
+            "Combined",
+            "Distinct"
+          ]
+        },
+        "cipherSuite": {
+          "description": "Parameters of the cipher suite in use as a map of string to string.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "staticNetwork": {
+          "description": "The configuration for set up of a static network.",
+          "type": "object",
+          "properties": {
+            "mgm": {
+              "description": "Configuration of a faked MGM for the static network as a string-string map.",
+              "type": "object"
+            },
+            "members": {
+              "description": "The member templates for the members to be added to the static network member list.",
+              "type": "array",
+              "items": {
+                "description": "A member template as a string-string map for a member to be added to the static network member list.",
+                "type": "object"
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "sessionKeyPolicy",
+        "cipherSuite"
+      ]
+    }
+  }
+}
