@@ -15,8 +15,9 @@
       "type": "number"
     },
     "groupId": {
-      "description": "The group ID that this file relates to, or constant 'CREATE_ID' if a new ID must be generated. A new ID should be generated only for an MGM.",
-      "type": "string"
+      "description": "The group ID (UUID) that this file relates to, or constant 'CREATE_ID' if a new ID must be generated. A new ID should be generated only for an MGM.",
+      "type": "string",
+      "pattern": "([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|CREATE_ID)"
     },
     "registrationProtocol": {
       "description": "The fully qualified class name of the registration protocol implementation class.",
