@@ -7,8 +7,7 @@
   "required": [
     "fileFormatVersion",
     "groupId",
-    "registrationProtocol",
-    "synchronisationProtocol"
+    "registrationProtocol"
   ],
   "properties": {
     "fileFormatVersion": {
@@ -26,6 +25,15 @@
     "synchronisationProtocol": {
       "description": "The fully qualified class name of the synchronisation protocol implementation class.",
       "type": "string"
+    },
+    "p2pParameters": {
+      "$ref": "#/$defs/p2pParameters"
+    },
+    "mgmInfo": {
+      "$ref": "#/$defs/mgmInfo"
+    },
+    "cipherSuite": {
+      "$ref": "#/$defs/cipherSuite"
     }
   },
   "allOf": [
@@ -40,33 +48,76 @@
         }
       },
       "then": {
-        "required": [
-          "fileFormatVersion",
-          "groupId",
-          "registrationProtocol",
-          "synchronisationProtocol",
-          "protocolParameters",
-          "p2pParameters",
-          "mgmInfo"
-        ],
-        "properties": {
-          "protocolParameters": {
-            "$ref": "#/$defs/protocolParameters"
-          },
-          "p2pParameters":  {
-            "$ref": "#/$defs/p2pParameters"
-          },
-          "mgmInfo": {
-            "$ref": "#/$defs/mgmInfo"
+        "if": {
+          "properties": {
+            "protocolParameters": {
+              "required": [
+                "staticNetwork"
+              ]
+            }
           }
+        },
+        "then": {
+          "$comment": "Properties for a group policy for a static network",
+          "required": [
+            "synchronisationProtocol",
+            "p2pParameters",
+            "cipherSuite",
+            "protocolParameters"
+          ],
+          "properties": {
+            "fileFormatVersion": true,
+            "groupId": true,
+            "registrationProtocol": true,
+            "synchronisationProtocol": true,
+            "p2pParameters": true,
+            "mgmInfo": false,
+            "cipherSuite": true,
+            "protocolParameters": {
+              "$ref": "#/$defs/protocolParameters"
+            }
+          },
+          "additionalProperties": false
+        },
+        "else": {
+          "$comment": "Properties for a group policy generated for a member by an MGM",
+          "required": [
+            "synchronisationProtocol",
+            "p2pParameters",
+            "mgmInfo",
+            "cipherSuite",
+            "protocolParameters"
+          ],
+          "properties": {
+            "fileFormatVersion": true,
+            "groupId": true,
+            "registrationProtocol": true,
+            "synchronisationProtocol": true,
+            "p2pParameters": true,
+            "mgmInfo": true,
+            "cipherSuite": true,
+            "protocolParameters": {
+              "$ref": "#/$defs/protocolParameters"
+            }
+          },
+          "additionalProperties": false
         }
       },
       "else": {
+        "$comment": "Properties for an MGM group policy",
         "properties": {
+          "fileFormatVersion": true,
+          "groupId": true,
+          "registrationProtocol": true,
+          "synchronisationProtocol": true,
+          "p2pParameters": false,
+          "mgmInfo": false,
+          "cipherSuite": false,
           "protocolParameters": {
-            "type": "object"
+            "$ref": "#/$defs/mgmProtocolParameters"
           }
-        }
+        },
+        "additionalProperties": false
       }
     }
   ],
@@ -77,6 +128,15 @@
     "mgmInfo": {
       "description": "The member information of the group MGM which members should use to join a group.",
       "type": "object",
+      "required": [
+        "name",
+        "sessionKey",
+        "ecdhKey",
+        "endpoints",
+        "platformVersion",
+        "softwareVersion",
+        "serial"
+      ],
       "properties": {
         "name": {
           "description": "The X500Name of the group MGM.",
@@ -100,8 +160,13 @@
         "endpoints": {
           "description": "The endpoints available for use for P2P communication with the MGM.",
           "type": "array",
+          "minItems": 1,
           "items": {
             "type": "object",
+            "required": [
+              "url",
+              "protocolVersion"
+            ],
             "properties": {
               "url": {
                 "description": "The URL for the endpoint.",
@@ -127,8 +192,7 @@
           "description": "An arbitrary number incremented each time the MemberInfo is changed.",
           "type": "integer"
         }
-      },
-      "additionalProperties": false
+      }
     },
     "p2pParameters": {
       "description": "All parameters required to configure the P2P communication before registration and synchronisation.",
@@ -163,7 +227,7 @@
             "Corda4"
           ]
         },
-        "p2pProtocolMode": {
+        "protocolMode": {
           "description": "The type of end to end session to use.",
           "enum": [
             "Authentication",
@@ -176,7 +240,7 @@
         "sessionPki",
         "tlsTrustStore",
         "tlsPki",
-        "p2pProtocolMode"
+        "protocolMode"
       ],
       "anyOf": [
         {
@@ -208,16 +272,13 @@
             "Distinct"
           ]
         },
-        "cipherSuite": {
-          "description": "Parameters of the cipher suite in use as a map of string to string.",
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
         "staticNetwork": {
           "description": "The configuration for set up of a static network.",
           "type": "object",
+          "required": [
+            "mgm",
+            "members"
+          ],
           "properties": {
             "mgm": {
               "description": "Configuration of a faked MGM for the static network as a string-string map.",
@@ -227,7 +288,7 @@
               "description": "The member templates for the members to be added to the static network member list.",
               "type": "array",
               "items": {
-                "description": "A member template as a string-string map for a member to be added to the static network member list.",
+                "description": "A member template as a map of values for a member to be added to the static network member list.",
                 "type": "object"
               }
             }
@@ -235,11 +296,20 @@
           "additionalProperties": false
         }
       },
-      "additionalProperties": false,
       "required": [
-        "sessionKeyPolicy",
-        "cipherSuite"
+        "sessionKeyPolicy"
       ]
+    },
+    "mgmProtocolParameters": {
+      "description": "All parameters required for an MGM to perform the registration or synchronisation protocols.",
+      "type": "object"
+    },
+    "cipherSuite": {
+      "description": "Parameters of the cipher suite in use as a map of string to string.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
     }
   }
 }
