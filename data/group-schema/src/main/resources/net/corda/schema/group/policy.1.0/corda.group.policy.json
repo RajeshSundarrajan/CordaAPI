@@ -7,7 +7,8 @@
   "required": [
     "fileFormatVersion",
     "groupId",
-    "registrationProtocol"
+    "registrationProtocol",
+    "synchronisationProtocol"
   ],
   "properties": {
     "fileFormatVersion": {
@@ -17,7 +18,7 @@
     "groupId": {
       "description": "The group ID (UUID) that this file relates to, or constant 'CREATE_ID' if a new ID must be generated. A new ID should be generated only for an MGM.",
       "type": "string",
-      "pattern": "([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|CREATE_ID)"
+      "pattern": "([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[1-5][a-fA-F0-9]{3}-[89aAbB][a-fA-F0-9]{3}-[a-fA-F0-9]{12})|CREATE_ID"
     },
     "registrationProtocol": {
       "description": "The fully qualified class name of the registration protocol implementation class.",
@@ -43,7 +44,7 @@
         "not": {
           "properties": {
             "groupId": {
-              "$ref": "#/$defs/mgmGroupId"
+              "const": "CREATE_ID"
             }
           }
         }
@@ -61,7 +62,6 @@
         "then": {
           "$comment": "Properties for a group policy for a static network",
           "required": [
-            "synchronisationProtocol",
             "p2pParameters",
             "cipherSuite",
             "protocolParameters"
@@ -83,7 +83,6 @@
         "else": {
           "$comment": "Properties for a group policy generated for a member by an MGM",
           "required": [
-            "synchronisationProtocol",
             "p2pParameters",
             "mgmInfo",
             "cipherSuite",
@@ -120,12 +119,38 @@
         },
         "additionalProperties": false
       }
+    },
+    {
+      "if": {
+        "not": {
+          "properties": {
+            "p2pParameters": {
+              "properties": {
+                "sessionPki": {
+                  "const": "NoPKI"
+                }
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "mgmInfo": {
+            "required": [
+              "sessionCertificate"
+            ]
+          },
+          "p2pParameters": {
+            "required": [
+              "sessionTrustRoots"
+            ]
+          }
+        }
+      }
     }
   ],
   "$defs": {
-    "mgmGroupId": {
-      "const": "CREATE_ID"
-    },
     "mgmInfo": {
       "description": "The member information of the group MGM which members should use to join a group.",
       "type": "object",
@@ -147,7 +172,7 @@
           "description": "The public key belonging to the MGM to be used for session initiation.",
           "type": "string"
         },
-        "certificate": {
+        "sessionCertificate": {
           "description": "The full certificate chain for the session key certificate.",
           "type": "array",
           "items": {
@@ -198,8 +223,14 @@
     "p2pParameters": {
       "description": "All parameters required to configure the P2P communication before registration and synchronisation.",
       "type": "object",
+      "required": [
+        "sessionPki",
+        "tlsTrustRoots",
+        "tlsPki",
+        "protocolMode"
+      ],
       "properties": {
-        "sessionTrustStore": {
+        "sessionTrustRoots": {
           "description": "The trust roots for session initiation certificate verification.",
           "type": "array",
           "items": {
@@ -210,11 +241,12 @@
           "description": "The PKI type to use for session handling.",
           "enum": [
             "Standard",
+            "StandardEV3",
             "Corda4",
             "NoPKI"
           ]
         },
-        "tlsTrustStore": {
+        "tlsTrustRoots": {
           "description": "The trust roots for TLS certificate verification.",
           "type": "array",
           "items": {
@@ -225,6 +257,7 @@
           "description": "The PKI type to use for TLS handling.",
           "enum": [
             "Standard",
+            "StandardEV3",
             "Corda4"
           ]
         },
@@ -236,35 +269,14 @@
           ]
         }
       },
-      "additionalProperties": false,
-      "required": [
-        "sessionPki",
-        "tlsTrustStore",
-        "tlsPki",
-        "protocolMode"
-      ],
-      "anyOf": [
-        {
-          "if": {
-            "not": {
-              "properties": {
-                "sessionPki": {
-                  "const": "NoPKI"
-                }
-              }
-            }
-          },
-          "then": {
-            "required": [
-              "sessionTrustStore"
-            ]
-          }
-        }
-      ]
+      "additionalProperties": false
     },
     "protocolParameters": {
       "description": "All parameters required to perform the registration or synchronisation protocols.",
       "type": "object",
+      "required": [
+        "sessionKeyPolicy"
+      ],
       "properties": {
         "sessionKeyPolicy": {
           "description": "Whether to use combined or distinct keys for ledger signing and end-to-end session authentication",
@@ -296,10 +308,7 @@
           },
           "additionalProperties": false
         }
-      },
-      "required": [
-        "sessionKeyPolicy"
-      ]
+      }
     },
     "mgmProtocolParameters": {
       "description": "All parameters required for an MGM to perform the registration or synchronisation protocols.",
