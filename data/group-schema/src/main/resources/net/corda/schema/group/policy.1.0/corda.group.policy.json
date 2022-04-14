@@ -19,15 +19,15 @@
     "groupId": {
       "description": "The group ID (UUID) that this file relates to, or constant 'CREATE_ID' if a new ID must be generated. A new ID should be generated only for an MGM.",
       "type": "string",
-      "pattern": "([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[1-5][a-fA-F0-9]{3}-[89aAbB][a-fA-F0-9]{3}-[a-fA-F0-9]{12})|CREATE_ID"
+      "pattern": "^([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[1-5][a-fA-F0-9]{3}-[89aAbB][a-fA-F0-9]{3}-[a-fA-F0-9]{12})|CREATE_ID$"
     },
     "registrationProtocol": {
       "description": "The fully qualified class name of the registration protocol implementation class.",
-      "type": "string"
+      "$ref": "#/$defs/className"
     },
     "synchronisationProtocol": {
       "description": "The fully qualified class name of the synchronisation protocol implementation class.",
-      "type": "string"
+      "$ref": "#/$defs/className"
     },
     "p2pParameters": {
       "$ref": "#/$defs/p2pParameters"
@@ -152,6 +152,16 @@
     }
   ],
   "$defs": {
+    "className": {
+      "description": "Common regular expression for class names.",
+      "type": "string",
+      "pattern": "^(([a-zA-Z][a-zA-Z_$0-9]*(\\.[a-zA-Z][a-zA-Z_$0-9]*)*)\\.)?([a-zA-Z][a-zA-Z_$0-9]*)$"
+    },
+    "certificate": {
+      "description": "Common regular expression for certificates in PEM format. Matches on header and footer plus base64 data including padding and new lines.",
+      "type": "string",
+      "pattern": "^(-+BEGIN CERTIFICATE-+)([A-Za-z0-9\\+\\/]*[\\\\n\\r\\n]*)+={0,2}[\\\\n\\r\\n]*(-+END CERTIFICATE-+)$"
+    },
     "mgmInfo": {
       "description": "The member information of the group MGM which members should use to join a group.",
       "type": "object",
@@ -177,7 +187,7 @@
           "description": "The full certificate chain for the session key certificate.",
           "type": "array",
           "items": {
-            "type": "string"
+            "$ref": "#/$defs/certificate"
           }
         },
         "ecdhKey": {
@@ -238,7 +248,7 @@
           "description": "The trust roots for session initiation certificate verification.",
           "type": "array",
           "items": {
-            "type": "string"
+            "$ref": "#/$defs/certificate"
           }
         },
         "sessionPki": {
@@ -254,7 +264,7 @@
           "description": "The trust roots for TLS certificate verification.",
           "type": "array",
           "items": {
-            "type": "string"
+            "$ref": "#/$defs/certificate"
           }
         },
         "tlsPki": {
