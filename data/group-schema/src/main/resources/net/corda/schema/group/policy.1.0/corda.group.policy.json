@@ -201,7 +201,8 @@
               },
               "protocolVersion": {
                 "description": "Protocol version supported by this endpoint.",
-                "type": "integer"
+                "type": "integer",
+                "minimum": 0
               }
             },
             "additionalProperties": false
@@ -209,7 +210,8 @@
         },
         "platformVersion": {
           "description": "The version of the Corda platform that the MGM is running on.",
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         },
         "softwareVersion": {
           "description": "The software version of Corda that the MGM is running on.",
@@ -217,7 +219,8 @@
         },
         "serial": {
           "description": "An arbitrary number incremented each time the MemberInfo is changed.",
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         }
       }
     },
