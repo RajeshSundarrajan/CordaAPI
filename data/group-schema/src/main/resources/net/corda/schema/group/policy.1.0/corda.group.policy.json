@@ -303,14 +303,9 @@
           "description": "The configuration for set up of a static network.",
           "type": "object",
           "required": [
-            "mgm",
             "members"
           ],
           "properties": {
-            "mgm": {
-              "description": "Configuration of a faked MGM for the static network as a string-string map.",
-              "type": "object"
-            },
             "members": {
               "description": "The member templates for the members to be added to the static network member list.",
               "type": "array",
