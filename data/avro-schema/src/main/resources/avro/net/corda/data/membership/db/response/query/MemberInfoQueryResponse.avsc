@@ -9,7 +9,7 @@
       "doc": "Holding identities of the members to retrieve.",
       "type": {
         "type": "array",
-        "items": "net.corda.data.membership.MemberInfo"
+        "items": "net.corda.data.membership.PersistentMemberInfo"
       }
     }
   ]
