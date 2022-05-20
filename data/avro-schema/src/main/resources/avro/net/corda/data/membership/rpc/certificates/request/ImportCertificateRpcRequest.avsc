@@ -1,7 +1,7 @@
 {
   "type": "record",
   "name": "ImportCertificateRpcRequest",
-  "namespace": "net.corda.data.membership.rpc.request",
+  "namespace": "net.corda.data.membership.rpc.certificates.request",
   "doc": "RPC request to import a certificate.",
   "fields": [
     {
