@@ -14,7 +14,8 @@
       "doc": "Request's payload, depends on the requested operation.",
       "type": [
         "RegistrationRequest",
-        "RegistrationStatusRequest"
+        "RegistrationStatusRequest",
+        "ImportCertificateRpcRequest"
       ]
     }
   ]

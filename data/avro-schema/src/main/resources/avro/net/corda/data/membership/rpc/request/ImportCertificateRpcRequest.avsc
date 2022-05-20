@@ -1,0 +1,23 @@
+{
+  "type": "record",
+  "name": "ImportCertificateRpcRequest",
+  "namespace": "net.corda.data.membership.rpc.request",
+  "doc": "RPC request to import a certificate.",
+  "fields": [
+    {
+      "name": "tenantId",
+      "doc": "'p2p', 'rpc-api', or holding identity identity ID.",
+      "type": "string"
+    },
+    {
+      "name": "alias",
+      "doc": "The certificate alias.",
+      "type": "string"
+    },
+    {
+      "name": "certificate",
+      "doc": "The certificate in PEM format.",
+      "type": "string"
+    }
+  ]
+}
